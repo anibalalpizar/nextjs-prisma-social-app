@@ -1,17 +1,18 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs"
-import React from "react"
+import { Button } from "@/components/ui/button"
 
 function Home() {
   return (
-    <div>
+    <div className="mt-4">
       <SignedOut>
         <SignInButton mode="modal">
-          <button className="bg-red-500">Sign In</button>
+          <Button>Sign In</Button>
         </SignInButton>
       </SignedOut>
       <SignedIn>
         <UserButton />
       </SignedIn>
+      <Button variant="secondary">Click me</Button>
     </div>
   )
 }
