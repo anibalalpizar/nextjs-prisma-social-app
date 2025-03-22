@@ -46,3 +46,13 @@ export async function getUser(clerkId: string) {
     },
   })
 }
+
+export async function getUserId() {
+  const { userId } = await auth()
+  if (!userId) throw new Error("User not authenticated")
+
+  const user = await getUser(userId)
+  if (!user) throw new Error("User not found")
+
+  return user.id
+}
