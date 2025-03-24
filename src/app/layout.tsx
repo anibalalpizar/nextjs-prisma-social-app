@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { ThemeProvider } from "@/components/theme-provider"
 import Navbar from "@/components/Navbar"
 import Sidebar from "@/components/Sidebar"
+import { Toaster } from "@/components/ui/toaster"
 
 import "./globals.css"
 
@@ -55,6 +56,7 @@ export default function RootLayout({
               </main>
             </div>
           </body>
+          <Toaster />
         </ThemeProvider>
       </html>
     </ClerkProvider>
