@@ -1,7 +1,8 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 import { auth, currentUser } from "@clerk/nextjs/server"
+import { prisma } from "@/lib/prisma"
 
 export async function syncUser() {
   try {
@@ -62,9 +63,8 @@ export async function getRandomUsers() {
     const userId = await getUserId()
     const randomUsers = await prisma.user.findMany({
       where: {
-        AND: [
-          { NOT: { followers: { some: { followerId: userId } } } },
-        ],
+        NOT: { id: userId },
+        AND: [{ NOT: { followers: { some: { followerId: userId } } } }],
       },
       select: {
         id: true,
@@ -84,5 +84,54 @@ export async function getRandomUsers() {
   } catch (error) {
     console.error("Error fetching random users:", error)
     return []
+  }
+}
+
+export async function toggleFollow(targetUserId: string) {
+  try {
+    const userId = await getUserId()
+    if (userId === targetUserId) throw new Error("Cannot follow yourself")
+
+    const existingFollow = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: userId,
+          followingId: targetUserId,
+        },
+      },
+    })
+
+    if (existingFollow) {
+      await prisma.follows.delete({
+        where: {
+          followerId_followingId: {
+            followerId: userId,
+            followingId: targetUserId,
+          },
+        },
+      })
+    } else {
+      await prisma.$transaction([
+        prisma.follows.create({
+          data: {
+            followerId: userId,
+            followingId: targetUserId,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            type: "FOLLOW",
+            userId: targetUserId,
+            creatorId: userId,
+          },
+        }),
+      ])
+    }
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    console.error("Error toggling follow:", error)
+    return { success: false, error: "Failed to toggle follow" }
   }
 }
