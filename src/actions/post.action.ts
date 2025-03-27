@@ -72,3 +72,64 @@ export async function getPosts() {
     throw new Error("Failed to fetch posts")
   }
 }
+
+export async function toggleLike(postId: string) {
+  try {
+    const userId = await getUserId()
+    if (!userId) return
+
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    })
+
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    })
+
+    if (!post) throw new Error("Post not found")
+
+    if (existingLike) {
+      await prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
+          },
+        },
+      })
+    } else {
+      await prisma.$transaction([
+        prisma.like.create({
+          data: {
+            userId,
+            postId,
+          },
+        }),
+        ...(post.authorId !== userId
+          ? [
+              prisma.notification.create({
+                data: {
+                  type: "LIKE",
+                  userId: post.authorId,
+                  creatorId: userId,
+                  postId,
+                },
+              }),
+            ]
+          : []),
+      ])
+    }
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (error) {
+    console.error("Failed to toggle like:", error)
+    return { success: false, error: "Failed to toggle like" }
+  }
+}
