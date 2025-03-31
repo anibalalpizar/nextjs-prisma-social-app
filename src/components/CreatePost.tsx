@@ -4,12 +4,13 @@ import { useState } from "react"
 import { useUser } from "@clerk/nextjs"
 import { ImageIcon, Loader2Icon, SendIcon } from "lucide-react"
 import { createPost } from "@/actions/post.action"
+import { useToast } from "@/hooks/use-toast"
 
 import { Card, CardContent } from "./ui/card"
 import { Avatar, AvatarImage } from "./ui/avatar"
 import { Textarea } from "./ui/textarea"
 import { Button } from "./ui/button"
-import { useToast } from "@/hooks/use-toast"
+import ImageUpload from "./ImageUpload"
 
 function CreatePost() {
   const [content, setcontent] = useState("")
@@ -65,7 +66,18 @@ function CreatePost() {
               disabled={isPosting}
             />
           </div>
-          {/* handle image */}
+          {(showImageUpload || imageUrl) && (
+            <div className="border rounded-lg p-4">
+              <ImageUpload
+                endpoint="postImage"
+                value={imageUrl}
+                onChange={(url) => {
+                  setImageUrl(url)
+                  if (!url) setShowImageUpload(false)
+                }}
+              />
+            </div>
+          )}
 
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex space-x-2">
